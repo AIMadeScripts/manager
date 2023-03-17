@@ -1,0 +1,85 @@
+{
+    "tabs": [
+        {
+            "name": "nmap",
+            "input": "nmap -sV -sC 127.0.0.1",
+            "text": "\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 0
+        },
+        {
+            "name": "ping",
+            "input": "ping google.com",
+            "text": "\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 1
+        },
+        {
+            "name": "dig",
+            "input": "dig",
+            "text": "\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 2
+        },
+        {
+            "name": "whoami",
+            "input": "whoami",
+            "text": "user\n\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 3
+        },
+        {
+            "name": "ls",
+            "input": "ls /",
+            "text": "bin\nboot\ndev\netc\nhome\ninitrd.img\ninitrd.img.old\nlib\nlib32\nlib64\nlibx32\nmedia\nmnt\nopt\nproc\nroot\nrun\nsbin\nsrv\nsys\ntmp\nusr\nvar\nvmlinuz\nvmlinuz.old\n\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 4
+        },
+        {
+            "name": "Public IP",
+            "input": "curl -s api.ipify.org",
+            "text": "\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 5
+        },
+        {
+            "name": "cat file",
+            "input": "cat l.py",
+            "text": "from tkinter import messagebox\nimport tkinter as tk\nfrom tkinter import ttk\nimport threading\nimport subprocess\nfrom tkinter import filedialog\nfrom tkinter import simpledialog\nimport json\nimport os\n\nclass GUI:\n    def __init__(self, master):\n        self.master = master\n        self.master.title(\"GUI with Tabs and Input Boxes\")\n        self.master.geometry(\"1000x600\")\n\n        # create a frame to hold the notebook\n        frame = tk.Frame(self.master)\n        frame.pack(fill=\"both\", expand=True)\n\n        # create a notebook with tabs\n        self.notebook = ttk.Notebook(frame)  # set padding\n        self.notebook.pack(side=\"top\", fill=\"both\", expand=True)\n\n        # create 10 tabs\n        self.tabs = []\n        self.text_boxes = []\n        self.input_boxes = []  # add this line\n        for i in range(10):\n            # create a tab\n            tab = ttk.Frame(self.notebook)\n            self.notebook.add(tab, text=f\"Tab {i+1}\")\n\n            # set the notebook style\n            style = ttk.Style()\n            style.configure(\"TNotebook.Tab\", font=('Verdana', 10), foreground='#fff')\n            style.map(\"TNotebook.Tab\", background=[(\"selected\", \"green\"), (\"!disabled\", \"#4d2f5d\"), (\"active\", \"green\")])\n\n            # create a console output area with a text widget\n            text_box = tk.Text(tab, background=\"#2a2a2a\", foreground=\"green\")\n            text_box.pack(side=\"top\", fill=\"both\", expand=True)\n            self.text_boxes.append(text_box)\n\n            # create input boxes on the left side of the tab\n            input_box = tk.Entry(tab, bg=\"#2a2a2a\", fg=\"white\", width=50, font=(\"Arial\", 12))\n            input_box.pack(side=\"left\")\n            input_box.bind(\"<Return>\", lambda event, tb=text_box, ib=input_box, st=style: self.run_command(tb, ib, st)) # bind the <Return> event to run_command\n            self.input_boxes.append(input_box)  # add this line\n\n            # create a button next to the input box to run the command\n            run_button = tk.Button(tab, text=\"Run\", bg=\"#4d2f5d\", command=lambda tb=text_box, ib=input_box, st=style: self.run_command(tb, ib, st))\n            run_button.pack(side=\"left\")\n\n            # create a stop button next to the run button to stop the command process\n            stop_button = tk.Button(tab, text=\"Stop\", bg=\"#4d2f5d\", command=lambda tb=text_box, ib=input_box, st=style: self.stop_command(tb, ib, st))\n            stop_button.pack(side=\"left\")\n\n            # create a clear button next to the stop button to clear the input box and text box\n            clear_button = tk.Button(tab, text=\"Clear\", bg=\"#4d2f5d\", command=lambda tb=text_box, st=style: self.clear_command(tb))\n            clear_button.pack(side=\"left\")\n\n            # create a rename button to rename the tab\n            rename_button = tk.Button(tab, text=\"Rename\", bg=\"#4d2f5d\", command=lambda t=tab: self.rename_tab(t))\n            rename_button.pack(side=\"right\")\n\n            self.tabs.append(tab)\n\n        # keep track of the running command process for each tab\n        self.running_processes = [None] * 10\n        self.processes = {}\n\n        # create a menu bar\n        menu_bar = tk.Menu(self.master)\n        self.master.config(menu=menu_bar)\n\n        # create a file menu\n        file_menu = tk.Menu(menu_bar, tearoff=0)\n        file_menu.configure(bg='blue')  # set the background color to blue\n        menu_bar.add_cascade(label=\"File\", menu=file_menu)\n        file_menu.add_command(label=\"Save\", command=self.save_data)\n        file_menu.add_command(label=\"Load\", command=self.load_data)\n\n        # initialize the saved data to an empty dictionary\n        self.saved_data = {}\n\n        self.status_bar = tk.Label(self.master, text=\"\", bd=1, relief=tk.SUNKEN, anchor=tk.W)\n        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)\n    \n    def load_data(self):\n        # open a file dialog to choose the data file\n        file_path = filedialog.askopenfilename(defaultextension=\".json\", filetypes=[(\"JSON Files\", \"*.json\"), (\"All Files\", \"*.*\")])\n        if not file_path:\n            return\n    \n        # load the data from the file\n        with open(file_path, \"r\") as f:\n            data = json.load(f)\n    \n        # delete all current tabs\n        for tab in self.notebook.tabs():\n            self.notebook.forget(tab)\n        \n        # create new tabs based on the data\n        for i, tab_data in enumerate(data.get('tabs', [])):\n            name = tab_data.get(\"name\", f\"Tab {i+1}\")\n            input_text = tab_data.get(\"input\", \"\")\n            text = tab_data.get(\"text\", \"\")\n            pid_label_text = tab_data.get(\"pid_label_text\", \"\")\n            self.populate_tab(name=name, input_text=input_text, text=text, pid_label_text=pid_label_text)\n\n    def populate_tab(self, name, input_text=\"\", text=\"\", pid_label_text=\"\", index=None):\n            # create new tab with name\n            tab = ttk.Frame(self.notebook)\n            self.notebook.add(tab, text=name)\n            self.tabs.append(tab) # add this line to append the new tab to the list\n            style = ttk.Style()\n            style.configure('TButton', background=\"#4d2f5d\")\n            # create a console output area with a text widget\n            text_box = tk.Text(tab, background=\"#2a2a2a\", foreground=\"green\")\n            text_box.pack(side=\"top\", fill=\"both\", expand=True)\n            self.text_boxes.append(text_box)\n        \n            # create input boxes on the left side of the tab\n            input_box = tk.Entry(tab, bg=\"#2a2a2a\", fg=\"white\", width=50, font=(\"Arial\", 12))\n            input_box.pack(side=\"left\")\n            self.input_boxes.append(input_box)  # add this line\n        \n            # create a button next to the input box to run the command\n            run_button = tk.Button(tab, text=\"Run\", bg=\"#4d2f5d\", command=lambda tb=text_box, ib=input_box, st=style: self.run_command(tb, ib, st))\n            run_button.pack(side=\"left\")\n        \n            # create a stop button next to the run button to stop the command process\n            stop_button = tk.Button(tab, text=\"Stop\", bg=\"#4d2f5d\", command=lambda tb=text_box, ib=input_box, st=style: self.stop_command(tb, ib, st))\n            stop_button.pack(side=\"left\")\n        \n            # create a clear button next to the stop button to clear the input box and text box\n            clear_button = tk.Button(tab, text=\"Clear\", bg=\"#4d2f5d\", command=lambda tb=text_box, st=style: self.clear_command(tb))\n            clear_button.pack(side=\"left\")\n        \n            # create a rename button to rename the tab\n            rename_button = tk.Button(tab, text=\"Rename\", bg=\"#4d2f5d\", command=lambda t=tab: self.rename_tab(t))\n            rename_button.pack(side=\"right\")\n        \n            # populate input box, text box, and pid label\n            input_box.delete(0, \"end\")\n            input_box.insert(0, input_text)\n            text_box.delete(\"1.0\", \"end\")\n            text_box.insert(\"end\", text)\n            pid_label = ttk.Label(tab, text=pid_label_text)\n            pid_label.pack(side='bottom', pady=5)\n    \n            # add a None value to the running_processes list for the newly created tab\n            self.running_processes.append(None)\n    \n    def clear_command(self, text_box):\n        text_box.config(state=\"normal\")\n        text_box.delete(1.0, \"end\")\n    \n        # define function to run the command in a separate thread and capture its output\n    def run_command(self, text_box, input_box, style):\n        try:\n            # get the command from the input box\n            command = input_box.get()\n\n            # check if there is already a running process for this tab\n            try:\n                tab_index = self.tabs.index(text_box.master)\n            except ValueError:\n                return\n            if self.running_processes[tab_index] is not None and self.running_processes[tab_index].poll() is None:\n                messagebox.showinfo(\"Info\", \"Please wait until previous command is finished.\")\n                return\n\n            # create a new process to run the command\n            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\n            self.processes[process.pid] = process\n            self.running_processes[tab_index] = process\n\n            # create a new thread to capture the process output\n            thread = threading.Thread(target=self.run_command_in_thread, args=(text_box, process, style, tab_index))\n            thread.start()\n\n            # store the process object in the button so it can be stopped later\n            stop_button = text_box.master.children[\"!button2\"]\n            stop_button[\"command\"] = lambda tb=text_box, ib=input_box, st=style, p=process, idx=tab_index: self.stop_command(tb, ib, st, p, idx)\n        except Exception as e:\n            text_box.configure(state=\"normal\")\n            text_box.insert(tk.END, f\"There was an error with your command: {e}\\n\")\n            style.map(\"TNotebook.Tab\", background=[(\"selected\", \"green\"), (\"!disabled\", \"#4d2f5d\"), (\"active\", \"green\")])\n    \n    def run_command_in_thread(self, text_box, process, style, tab_index):\n        try:\n            while True:\n                output = process.stdout.readline()\n                if output == b'' and process.poll() is not None:\n                    break\n                if output:\n                    text_box.configure(state=\"normal\")\n                    text_box.insert(tk.END, output.decode())\n        except Exception:\n            text_box.configure(state=\"normal\")\n            text_box.insert(tk.END, \"There was an error with your command\\n\")\n\n    def stop_command(self, text_box, input_box, style, process, index):\n        if index is not None and index < len(self.running_processes) and self.running_processes[index] is not None:\n            self.running_processes[index].kill()\n            self.running_processes[index] = None\n            style.configure(\"Stop.TButton\", state=\"disabled\")\n            style.configure(\"Run.TButton\", state=\"normal\")\n            text_box.insert(tk.END, \"\\nProcess stopped.\\n\")\n        else:\n            text_box.insert(tk.END, \"\\nNo process to stop.\\n\")\n    \n    \n    \n    def stop_all_processes(self):\n        # Stop all running processes\n        for process in self.processes:\n            if process.poll() is None:\n                process.terminate()\n    \n    def rename_tab(self, tab, new_name=None):\n        # get the current name of the tab\n        current_name = self.notebook.tab(tab, \"text\")\n        # if new_name is not provided, ask for a new tab name using a pop-up dialog\n        if not new_name:\n            new_name = tk.simpledialog.askstring(\"Rename Tab\", \"Enter a new name for the tab:\", initialvalue=current_name)\n        if new_name:\n            # set the new tab name\n            self.notebook.tab(tab, text=new_name)\n    \n    def do_rename_tab(self, tab, name):\n        # rename the tab\n        index = self.notebook.index(tab)\n        self.notebook.tab(index, text=name)\n\n    def save_data(self):\n        # Create a dictionary containing the current state of the GUI\n        data = {\n            \"tabs\": [],\n            \"saved_data\": self.saved_data\n        }\n        for i, tab in enumerate(self.tabs):\n            pid_label_widget = tab.children.get(\"!label\")\n            pid_label_text = pid_label_widget[\"text\"] if pid_label_widget else \"\"\n            tab_data = {\n                \"name\": self.notebook.tab(i, option=\"text\"),\n                \"input\": tab.children[\"!entry\"].get(),\n                \"text\": tab.children[\"!text\"].get(\"1.0\", tk.END),\n                \"pid_label_text\": pid_label_text,\n                \"pid_label_widget\": pid_label_widget.winfo_pathname(pid_label_widget.winfo_id()) if pid_label_widget else \"\",\n                \"index\": i  # add the index of the tab\n            }\n            data[\"tabs\"].append(tab_data)\n    \n        # Ask the user to choose a file name and location\n        file_path = filedialog.asksaveasfilename(\n            defaultextension=\".json\",\n            filetypes=[(\"JSON files\", \"*.json\")],\n            initialdir=\".\"\n        )\n    \n        # Write the data to the file using JSON format\n        if file_path:\n            with open(file_path, \"w\") as f:\n                json.dump(data, f, indent=4)\n                self.status_bar.config(text=f\"Saved data to {file_path}\")\n        else:\n            self.status_bar.config(text=\"Save cancelled.\")\n\n\nroot = tk.Tk()\napp = GUI(root)\nroot.mainloop()\n\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 6
+        },
+        {
+            "name": "Amass Subdomain",
+            "input": "amass enum -brute -w /usr/share/wordlists/wfuzz/general/common.txt -d $InputDomain -passive -r 8.8.8.8,8.8.4.4,1.0.0.1,1.1.1.1",
+            "text": "\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 7
+        },
+        {
+            "name": "echo",
+            "input": "echo \"hello\"",
+            "text": "\"hello\"\n\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 8
+        },
+        {
+            "name": "curl",
+            "input": "curl -s google.com",
+            "text": "<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<TITLE>301 Moved</TITLE></HEAD><BODY>\n<H1>301 Moved</H1>\nThe document has moved\n<A HREF=\"http://www.google.com/\">here</A>.\r\n</BODY></HTML>\r\n\n",
+            "pid_label_text": "",
+            "pid_label_widget": "",
+            "index": 9
+        }
+    ],
+    "saved_data": {}
+}
