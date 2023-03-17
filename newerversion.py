@@ -14,8 +14,12 @@ class GUI:
         self.master.title("GUI with Tabs and Input Boxes")
         self.master.geometry("1000x600")
 
+        # create a frame to hold the notebook
+        frame = tk.Frame(self.master)
+        frame.pack(fill="both", expand=True)
+
         # create a notebook with tabs
-        self.notebook = ttk.Notebook(self.master)
+        self.notebook = ttk.Notebook(frame)  # set padding
         self.notebook.pack(side="top", fill="both", expand=True)
 
         # create 10 tabs
@@ -30,7 +34,7 @@ class GUI:
             # set the notebook style
             style = ttk.Style()
             style.configure("TNotebook.Tab", font=('Verdana', 10), foreground='#fff')
-            style.map("TNotebook.Tab", background=[("selected", "#4d2f5d"), ("!disabled", "#4d2f5d"), ("active", "#4d2f5d")])
+            style.map("TNotebook.Tab", background=[("selected", "green"), ("!disabled", "#4d2f5d"), ("active", "green")])
 
             # create a console output area with a text widget
             text_box = tk.Text(tab, background="#2a2a2a", foreground="green")
@@ -40,6 +44,7 @@ class GUI:
             # create input boxes on the left side of the tab
             input_box = tk.Entry(tab, bg="#2a2a2a", fg="white", width=50, font=("Arial", 12))
             input_box.pack(side="left")
+            input_box.bind("<Return>", lambda event, tb=text_box, ib=input_box, st=style: self.run_command(tb, ib, st)) # bind the <Return> event to run_command
             self.input_boxes.append(input_box)  # add this line
 
             # create a button next to the input box to run the command
@@ -70,6 +75,7 @@ class GUI:
 
         # create a file menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.configure(bg='blue')  # set the background color to blue
         menu_bar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Save", command=self.save_data)
         file_menu.add_command(label="Load", command=self.load_data)
@@ -124,7 +130,7 @@ class GUI:
             run_button.pack(side="left")
         
             # create a stop button next to the run button to stop the command process
-            stop_button = tk.Button(tab, text="Stop", bg="#4d2f5d", command=lambda tb=text_box, ib=input_box, st=style, i=len(self.tabs)-1: self.stop_command(tb, ib, st, i))
+            stop_button = tk.Button(tab, text="Stop", bg="#4d2f5d", command=lambda tb=text_box, ib=input_box, st=style: self.stop_command(tb, ib, st))
             stop_button.pack(side="left")
         
             # create a clear button next to the stop button to clear the input box and text box
@@ -165,9 +171,6 @@ class GUI:
                 messagebox.showinfo("Info", "Please wait until previous command is finished.")
                 return
 
-            # Change tab color when the command is running
-            style.map("TNotebook.Tab", background=[("selected", "orange"), ("!disabled", "orange"), ("active", "orange")])
-
             # create a new process to run the command
             process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self.processes[process.pid] = process
@@ -183,7 +186,7 @@ class GUI:
         except Exception as e:
             text_box.configure(state="normal")
             text_box.insert(tk.END, f"There was an error with your command: {e}\n")
-            style.map("TNotebook.Tab", background=[("selected", "#4d2f5d"), ("!disabled", "#4d2f5d"), ("active", "#4d2f5d")])
+            style.map("TNotebook.Tab", background=[("selected", "green"), ("!disabled", "#4d2f5d"), ("active", "green")])
     
     def run_command_in_thread(self, text_box, process, style, tab_index):
         try:
@@ -197,25 +200,25 @@ class GUI:
         except Exception:
             text_box.configure(state="normal")
             text_box.insert(tk.END, "There was an error with your command\n")
-            style.map("TNotebook.Tab", background=[("selected", "#4d2f5d"), ("!disabled", "#4d2f5d"), ("active", "#4d2f5d")])    
 
     def stop_command(self, text_box, input_box, style, process, index):
-        if self.running_processes[index] is not None:
+        if index is not None and index < len(self.running_processes) and self.running_processes[index] is not None:
             self.running_processes[index].kill()
             self.running_processes[index] = None
             style.configure("Stop.TButton", state="disabled")
             style.configure("Run.TButton", state="normal")
             text_box.insert(tk.END, "\nProcess stopped.\n")
         else:
-            # update the status bar to indicate that there is no command running
-            self.status_bar.config(text="No command running.", fg="black")
-
+            text_box.insert(tk.END, "\nNo process to stop.\n")
+    
+    
+    
     def stop_all_processes(self):
         # Stop all running processes
         for process in self.processes:
             if process.poll() is None:
                 process.terminate()
-
+    
     def rename_tab(self, tab, new_name=None):
         # get the current name of the tab
         current_name = self.notebook.tab(tab, "text")
